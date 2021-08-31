@@ -1,0 +1,32 @@
+
+---------------------------------------------------------------------------------------------------------------------------------
+Release notes
+
+v1.30 - 05.02.2020
+- Yellow LED indicate - upon completion of reception of the END_CHAR (0x00)
+- After receive undefinied CMD, send answer "ERR 01"
+ 
+v1.10 - 21.01.2020
+ - Switch to internal IRC
+ - Changed hardware to 2DI+2DO
+ - Changed I2C address from 0x0e to 0x04 (default address on board 2DI+2DO)
+ - Changed input polarity (Active in log 1)
+ - Add LED monitors:
+	- flashing twice (for 0.5 seconds) with a green LED when LPC824 Lite is starting up
+	- when sending any command via RS485 from the LPC824 Lite module - a single blinking of the green LED for 0.1 sec 
+	- upon completion of reception and recognition by the LPC824 Lite module of any command via RS485 - a single blinking of the yellow LED for 0.1 sec
+
+v1.00 - 27.12.2019
+ - Initial version. External Crystal clock source. I2C 400kHz, Protocol applied. Application Flow Applied.
+	Yellow LED work as RUN indicator. When blinking in 1Hz - program roatate through main loop.
+	Green LED work as I2C Comm indicator. Lit On when I2C is active (Read or write).
+	Input on 4DI/4DO Board are pooled (scanning state continously, each 100 ms)
+	Output are set immediatelly if needs.
+	NXP HAL Library:
+	I2C Communication - HAL is writen is without timeout! Can be stuck in do{}loop cycle...
+	Alive CountDown timer is preset after Boot (K = 30 sec.) See Config.h
+
+Hardware
+- Status LED on BOKRA LPC824 Lite are not usable! Light is very poor. Serial resistor is too high.
+- MCP23008 - DON'T USE Sequence access mode! Cannot switch back to byte mode, because reset is not used (only from power up).
+- External SMD Crystal on LPC824 Lite is WRONG!

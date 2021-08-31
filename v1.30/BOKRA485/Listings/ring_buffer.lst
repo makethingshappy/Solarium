@@ -1,0 +1,1514 @@
+L 1 "lpc_chip_82x\src\ring_buffer.c"
+N/*
+N * @brief Common ring buffer support functions
+N *
+N * @note
+N * Copyright(C) NXP Semiconductors, 2012
+N * All rights reserved.
+N *
+N * @par
+N * Software that is described herein is for illustrative purposes only
+N * which provides customers with programming information regarding the
+N * LPC products.  This software is supplied "AS IS" without any warranties of
+N * any kind, and NXP Semiconductors and its licensor disclaim any and
+N * all warranties, express or implied, including all implied warranties of
+N * merchantability, fitness for a particular purpose and non-infringement of
+N * intellectual property rights.  NXP Semiconductors assumes no responsibility
+N * or liability for the use of the software, conveys no license or rights under any
+N * patent, copyright, mask work right, or any other intellectual property rights in
+N * or to any products. NXP Semiconductors reserves the right to make changes
+N * in the software without notification. NXP Semiconductors also makes no
+N * representation or warranty that such application will be suitable for the
+N * specified use without further testing or modification.
+N *
+N * @par
+N * Permission to use, copy, modify, and distribute this software and its
+N * documentation is hereby granted, under NXP Semiconductors' and its
+N * licensor's relevant copyrights in the software, without fee, provided that it
+N * is used in conjunction with NXP Semiconductors microcontrollers.  This
+N * copyright, permission, and disclaimer notice must appear in all copies of
+N * this code.
+N */
+N
+N#include <string.h>
+L 1 "C:\Keil_v5\ARM\ARMCC\Bin\..\include\string.h" 1
+N/* string.h: ANSI 'C' (X3J11 Oct 88) library header, section 4.11 */
+N/* Copyright (C) Codemist Ltd., 1988-1993.                        */
+N/* Copyright 1991-1993 ARM Limited. All rights reserved.          */
+N/* version 0.04 */
+N
+N/*
+N * RCS $Revision$
+N * Checkin $Date$
+N */
+N
+N/*
+N * string.h declares one type and several functions, and defines one macro
+N * useful for manipulating character arrays and other objects treated as
+N * character arrays. Various methods are used for determining the lengths of
+N * the arrays, but in all cases a char * or void * argument points to the
+N * initial (lowest addresses) character of the array. If an array is written
+N * beyond the end of an object, the behaviour is undefined.
+N */
+N
+N#ifndef __string_h
+N#define __string_h
+N#define __ARMCLIB_VERSION 5060016
+N
+N#define _ARMABI __declspec(__nothrow)
+N
+N  #ifndef __STRING_DECLS
+N  #define __STRING_DECLS
+N
+N    #undef __CLIBNS
+N
+N    #ifdef __cplusplus
+S        namespace std {
+S        #define __CLIBNS std::
+S        extern "C" {
+N    #else
+N      #define __CLIBNS
+N    #endif  /* __cplusplus */
+N
+N#if defined(__cplusplus) || !defined(__STRICT_ANSI__)
+X#if 0L || !0L
+N /* unconditional in C++ and non-strict C for consistency of debug info */
+N  #if __sizeof_ptr == 8
+X  #if 4 == 8
+S    typedef unsigned long size_t;   /* see <stddef.h> */
+N  #else
+N    typedef unsigned int size_t;   /* see <stddef.h> */
+N  #endif
+N#elif !defined(__size_t)
+S  #define __size_t 1
+S  #if __sizeof_ptr == 8
+S    typedef unsigned long size_t;   /* see <stddef.h> */
+S  #else
+S    typedef unsigned int size_t;   /* see <stddef.h> */
+S  #endif
+N#endif
+N
+N#undef NULL
+N#define NULL 0                   /* see <stddef.h> */
+N
+Nextern _ARMABI void *memcpy(void * __restrict /*s1*/,
+Xextern __declspec(__nothrow) void *memcpy(void * __restrict  ,
+N                    const void * __restrict /*s2*/, size_t /*n*/) __attribute__((__nonnull__(1,2)));
+N   /*
+N    * copies n characters from the object pointed to by s2 into the object
+N    * pointed to by s1. If copying takes place between objects that overlap,
+N    * the behaviour is undefined.
+N    * Returns: the value of s1.
+N    */
+Nextern _ARMABI void *memmove(void * /*s1*/,
+Xextern __declspec(__nothrow) void *memmove(void *  ,
+N                    const void * /*s2*/, size_t /*n*/) __attribute__((__nonnull__(1,2)));
+N   /*
+N    * copies n characters from the object pointed to by s2 into the object
+N    * pointed to by s1. Copying takes place as if the n characters from the
+N    * object pointed to by s2 are first copied into a temporary array of n
+N    * characters that does not overlap the objects pointed to by s1 and s2,
+N    * and then the n characters from the temporary array are copied into the
+N    * object pointed to by s1.
+N    * Returns: the value of s1.
+N    */
+Nextern _ARMABI char *strcpy(char * __restrict /*s1*/, const char * __restrict /*s2*/) __attribute__((__nonnull__(1,2)));
+Xextern __declspec(__nothrow) char *strcpy(char * __restrict  , const char * __restrict  ) __attribute__((__nonnull__(1,2)));
+N   /*
+N    * copies the string pointed to by s2 (including the terminating nul
+N    * character) into the array pointed to by s1. If copying takes place
+N    * between objects that overlap, the behaviour is undefined.
+N    * Returns: the value of s1.
+N    */
+Nextern _ARMABI char *strncpy(char * __restrict /*s1*/, const char * __restrict /*s2*/, size_t /*n*/) __attribute__((__nonnull__(1,2)));
+Xextern __declspec(__nothrow) char *strncpy(char * __restrict  , const char * __restrict  , size_t  ) __attribute__((__nonnull__(1,2)));
+N   /*
+N    * copies not more than n characters (characters that follow a null
+N    * character are not copied) from the array pointed to by s2 into the array
+N    * pointed to by s1. If copying takes place between objects that overlap,
+N    * the behaviour is undefined.
+N    * Returns: the value of s1.
+N    */
+N
+Nextern _ARMABI char *strcat(char * __restrict /*s1*/, const char * __restrict /*s2*/) __attribute__((__nonnull__(1,2)));
+Xextern __declspec(__nothrow) char *strcat(char * __restrict  , const char * __restrict  ) __attribute__((__nonnull__(1,2)));
+N   /*
+N    * appends a copy of the string pointed to by s2 (including the terminating
+N    * null character) to the end of the string pointed to by s1. The initial
+N    * character of s2 overwrites the null character at the end of s1.
+N    * Returns: the value of s1.
+N    */
+Nextern _ARMABI char *strncat(char * __restrict /*s1*/, const char * __restrict /*s2*/, size_t /*n*/) __attribute__((__nonnull__(1,2)));
+Xextern __declspec(__nothrow) char *strncat(char * __restrict  , const char * __restrict  , size_t  ) __attribute__((__nonnull__(1,2)));
+N   /*
+N    * appends not more than n characters (a null character and characters that
+N    * follow it are not appended) from the array pointed to by s2 to the end of
+N    * the string pointed to by s1. The initial character of s2 overwrites the
+N    * null character at the end of s1. A terminating null character is always
+N    * appended to the result.
+N    * Returns: the value of s1.
+N    */
+N
+N/*
+N * The sign of a nonzero value returned by the comparison functions is
+N * determined by the sign of the difference between the values of the first
+N * pair of characters (both interpreted as unsigned char) that differ in the
+N * objects being compared.
+N */
+N
+Nextern _ARMABI int memcmp(const void * /*s1*/, const void * /*s2*/, size_t /*n*/) __attribute__((__nonnull__(1,2)));
+Xextern __declspec(__nothrow) int memcmp(const void *  , const void *  , size_t  ) __attribute__((__nonnull__(1,2)));
+N   /*
+N    * compares the first n characters of the object pointed to by s1 to the
+N    * first n characters of the object pointed to by s2.
+N    * Returns: an integer greater than, equal to, or less than zero, according
+N    *          as the object pointed to by s1 is greater than, equal to, or
+N    *          less than the object pointed to by s2.
+N    */
+Nextern _ARMABI int strcmp(const char * /*s1*/, const char * /*s2*/) __attribute__((__nonnull__(1,2)));
+Xextern __declspec(__nothrow) int strcmp(const char *  , const char *  ) __attribute__((__nonnull__(1,2)));
+N   /*
+N    * compares the string pointed to by s1 to the string pointed to by s2.
+N    * Returns: an integer greater than, equal to, or less than zero, according
+N    *          as the string pointed to by s1 is greater than, equal to, or
+N    *          less than the string pointed to by s2.
+N    */
+Nextern _ARMABI int strncmp(const char * /*s1*/, const char * /*s2*/, size_t /*n*/) __attribute__((__nonnull__(1,2)));
+Xextern __declspec(__nothrow) int strncmp(const char *  , const char *  , size_t  ) __attribute__((__nonnull__(1,2)));
+N   /*
+N    * compares not more than n characters (characters that follow a null
+N    * character are not compared) from the array pointed to by s1 to the array
+N    * pointed to by s2.
+N    * Returns: an integer greater than, equal to, or less than zero, according
+N    *          as the string pointed to by s1 is greater than, equal to, or
+N    *          less than the string pointed to by s2.
+N    */
+Nextern _ARMABI int strcasecmp(const char * /*s1*/, const char * /*s2*/) __attribute__((__nonnull__(1,2)));
+Xextern __declspec(__nothrow) int strcasecmp(const char *  , const char *  ) __attribute__((__nonnull__(1,2)));
+N   /*
+N    * compares the string pointed to by s1 to the string pointed to by s2,
+N    * case-insensitively as defined by the current locale.
+N    * Returns: an integer greater than, equal to, or less than zero, according
+N    *          as the string pointed to by s1 is greater than, equal to, or
+N    *          less than the string pointed to by s2.
+N    */
+Nextern _ARMABI int strncasecmp(const char * /*s1*/, const char * /*s2*/, size_t /*n*/) __attribute__((__nonnull__(1,2)));
+Xextern __declspec(__nothrow) int strncasecmp(const char *  , const char *  , size_t  ) __attribute__((__nonnull__(1,2)));
+N   /*
+N    * compares not more than n characters (characters that follow a null
+N    * character are not compared) from the array pointed to by s1 to the array
+N    * pointed to by s2, case-insensitively as defined by the current locale.
+N    * Returns: an integer greater than, equal to, or less than zero, according
+N    *          as the string pointed to by s1 is greater than, equal to, or
+N    *          less than the string pointed to by s2.
+N    */
+Nextern _ARMABI int strcoll(const char * /*s1*/, const char * /*s2*/) __attribute__((__nonnull__(1,2)));
+Xextern __declspec(__nothrow) int strcoll(const char *  , const char *  ) __attribute__((__nonnull__(1,2)));
+N   /*
+N    * compares the string pointed to by s1 to the string pointed to by s2, both
+N    * interpreted as appropriate to the LC_COLLATE category of the current
+N    * locale.
+N    * Returns: an integer greater than, equal to, or less than zero, according
+N    *          as the string pointed to by s1 is greater than, equal to, or
+N    *          less than the string pointed to by s2 when both are interpreted
+N    *          as appropriate to the current locale.
+N    */
+N
+Nextern _ARMABI size_t strxfrm(char * __restrict /*s1*/, const char * __restrict /*s2*/, size_t /*n*/) __attribute__((__nonnull__(2)));
+Xextern __declspec(__nothrow) size_t strxfrm(char * __restrict  , const char * __restrict  , size_t  ) __attribute__((__nonnull__(2)));
+N   /*
+N    * transforms the string pointed to by s2 and places the resulting string
+N    * into the array pointed to by s1. The transformation function is such that
+N    * if the strcmp function is applied to two transformed strings, it returns
+N    * a value greater than, equal to or less than zero, corresponding to the
+N    * result of the strcoll function applied to the same two original strings.
+N    * No more than n characters are placed into the resulting array pointed to
+N    * by s1, including the terminating null character. If n is zero, s1 is
+N    * permitted to be a null pointer. If copying takes place between objects
+N    * that overlap, the behaviour is undefined.
+N    * Returns: The length of the transformed string is returned (not including
+N    *          the terminating null character). If the value returned is n or
+N    *          more, the contents of the array pointed to by s1 are
+N    *          indeterminate.
+N    */
+N
+N
+N#ifdef __cplusplus
+Sextern _ARMABI const void *memchr(const void * /*s*/, int /*c*/, size_t /*n*/) __attribute__((__nonnull__(1)));
+Sextern "C++" void *memchr(void * __s, int __c, size_t __n) __attribute__((__nonnull__(1)));
+Sextern "C++" inline void *memchr(void * __s, int __c, size_t __n)
+S    { return const_cast<void *>(memchr(const_cast<const void *>(__s), __c, __n)); }
+N#else
+Nextern _ARMABI void *memchr(const void * /*s*/, int /*c*/, size_t /*n*/) __attribute__((__nonnull__(1)));
+Xextern __declspec(__nothrow) void *memchr(const void *  , int  , size_t  ) __attribute__((__nonnull__(1)));
+N#endif
+N   /*
+N    * locates the first occurence of c (converted to an unsigned char) in the
+N    * initial n characters (each interpreted as unsigned char) of the object
+N    * pointed to by s.
+N    * Returns: a pointer to the located character, or a null pointer if the
+N    *          character does not occur in the object.
+N    */
+N
+N#ifdef __cplusplus
+Sextern _ARMABI const char *strchr(const char * /*s*/, int /*c*/) __attribute__((__nonnull__(1)));
+Sextern "C++" char *strchr(char * __s, int __c) __attribute__((__nonnull__(1)));
+Sextern "C++" inline char *strchr(char * __s, int __c)
+S    { return const_cast<char *>(strchr(const_cast<const char *>(__s), __c)); }
+N#else
+Nextern _ARMABI char *strchr(const char * /*s*/, int /*c*/) __attribute__((__nonnull__(1)));
+Xextern __declspec(__nothrow) char *strchr(const char *  , int  ) __attribute__((__nonnull__(1)));
+N#endif
+N   /*
+N    * locates the first occurence of c (converted to an char) in the string
+N    * pointed to by s (including the terminating null character).
+N    * Returns: a pointer to the located character, or a null pointer if the
+N    *          character does not occur in the string.
+N    */
+N
+Nextern _ARMABI size_t strcspn(const char * /*s1*/, const char * /*s2*/) __attribute__((__nonnull__(1,2)));
+Xextern __declspec(__nothrow) size_t strcspn(const char *  , const char *  ) __attribute__((__nonnull__(1,2)));
+N   /*
+N    * computes the length of the initial segment of the string pointed to by s1
+N    * which consists entirely of characters not from the string pointed to by
+N    * s2. The terminating null character is not considered part of s2.
+N    * Returns: the length of the segment.
+N    */
+N
+N#ifdef __cplusplus
+Sextern _ARMABI const char *strpbrk(const char * /*s1*/, const char * /*s2*/) __attribute__((__nonnull__(1,2)));
+Sextern "C++" char *strpbrk(char * __s1, const char * __s2) __attribute__((__nonnull__(1,2)));
+Sextern "C++" inline char *strpbrk(char * __s1, const char * __s2)
+S    { return const_cast<char *>(strpbrk(const_cast<const char *>(__s1), __s2)); }
+N#else
+Nextern _ARMABI char *strpbrk(const char * /*s1*/, const char * /*s2*/) __attribute__((__nonnull__(1,2)));
+Xextern __declspec(__nothrow) char *strpbrk(const char *  , const char *  ) __attribute__((__nonnull__(1,2)));
+N#endif
+N   /*
+N    * locates the first occurence in the string pointed to by s1 of any
+N    * character from the string pointed to by s2.
+N    * Returns: returns a pointer to the character, or a null pointer if no
+N    *          character form s2 occurs in s1.
+N    */
+N
+N#ifdef __cplusplus
+Sextern _ARMABI const char *strrchr(const char * /*s*/, int /*c*/) __attribute__((__nonnull__(1)));
+Sextern "C++" char *strrchr(char * __s, int __c) __attribute__((__nonnull__(1)));
+Sextern "C++" inline char *strrchr(char * __s, int __c)
+S    { return const_cast<char *>(strrchr(const_cast<const char *>(__s), __c)); }
+N#else
+Nextern _ARMABI char *strrchr(const char * /*s*/, int /*c*/) __attribute__((__nonnull__(1)));
+Xextern __declspec(__nothrow) char *strrchr(const char *  , int  ) __attribute__((__nonnull__(1)));
+N#endif
+N   /*
+N    * locates the last occurence of c (converted to a char) in the string
+N    * pointed to by s. The terminating null character is considered part of
+N    * the string.
+N    * Returns: returns a pointer to the character, or a null pointer if c does
+N    *          not occur in the string.
+N    */
+N
+Nextern _ARMABI size_t strspn(const char * /*s1*/, const char * /*s2*/) __attribute__((__nonnull__(1,2)));
+Xextern __declspec(__nothrow) size_t strspn(const char *  , const char *  ) __attribute__((__nonnull__(1,2)));
+N   /*
+N    * computes the length of the initial segment of the string pointed to by s1
+N    * which consists entirely of characters from the string pointed to by S2
+N    * Returns: the length of the segment.
+N    */
+N
+N#ifdef __cplusplus
+Sextern _ARMABI const char *strstr(const char * /*s1*/, const char * /*s2*/) __attribute__((__nonnull__(1,2)));
+Sextern "C++" char *strstr(char * __s1, const char * __s2) __attribute__((__nonnull__(1,2)));
+Sextern "C++" inline char *strstr(char * __s1, const char * __s2)
+S    { return const_cast<char *>(strstr(const_cast<const char *>(__s1), __s2)); }
+N#else
+Nextern _ARMABI char *strstr(const char * /*s1*/, const char * /*s2*/) __attribute__((__nonnull__(1,2)));
+Xextern __declspec(__nothrow) char *strstr(const char *  , const char *  ) __attribute__((__nonnull__(1,2)));
+N#endif
+N   /*
+N    * locates the first occurence in the string pointed to by s1 of the
+N    * sequence of characters (excluding the terminating null character) in the
+N    * string pointed to by s2.
+N    * Returns: a pointer to the located string, or a null pointer if the string
+N    *          is not found.
+N    */
+N
+Nextern _ARMABI char *strtok(char * __restrict /*s1*/, const char * __restrict /*s2*/) __attribute__((__nonnull__(2)));
+Xextern __declspec(__nothrow) char *strtok(char * __restrict  , const char * __restrict  ) __attribute__((__nonnull__(2)));
+Nextern _ARMABI char *_strtok_r(char * /*s1*/, const char * /*s2*/, char ** /*ptr*/) __attribute__((__nonnull__(2,3)));
+Xextern __declspec(__nothrow) char *_strtok_r(char *  , const char *  , char **  ) __attribute__((__nonnull__(2,3)));
+N#ifndef __STRICT_ANSI__
+Nextern _ARMABI char *strtok_r(char * /*s1*/, const char * /*s2*/, char ** /*ptr*/) __attribute__((__nonnull__(2,3)));
+Xextern __declspec(__nothrow) char *strtok_r(char *  , const char *  , char **  ) __attribute__((__nonnull__(2,3)));
+N#endif
+N   /*
+N    * A sequence of calls to the strtok function breaks the string pointed to
+N    * by s1 into a sequence of tokens, each of which is delimited by a
+N    * character from the string pointed to by s2. The first call in the
+N    * sequence has s1 as its first argument, and is followed by calls with a
+N    * null pointer as their first argument. The separator string pointed to by
+N    * s2 may be different from call to call.
+N    * The first call in the sequence searches for the first character that is
+N    * not contained in the current separator string s2. If no such character
+N    * is found, then there are no tokens in s1 and the strtok function returns
+N    * a null pointer. If such a character is found, it is the start of the
+N    * first token.
+N    * The strtok function then searches from there for a character that is
+N    * contained in the current separator string. If no such character is found,
+N    * the current token extends to the end of the string pointed to by s1, and
+N    * subsequent searches for a token will fail. If such a character is found,
+N    * it is overwritten by a null character, which terminates the current
+N    * token. The strtok function saves a pointer to the following character,
+N    * from which the next search for a token will start.
+N    * Each subsequent call, with a null pointer as the value for the first
+N    * argument, starts searching from the saved pointer and behaves as
+N    * described above.
+N    * Returns: pointer to the first character of a token, or a null pointer if
+N    *          there is no token.
+N    *
+N    * strtok_r() is a common extension which works exactly like
+N    * strtok(), but instead of storing its state in a hidden
+N    * library variable, requires the user to pass in a pointer to a
+N    * char * variable which will be used instead. Any sequence of
+N    * calls to strtok_r() passing the same char ** pointer should
+N    * behave exactly like the corresponding sequence of calls to
+N    * strtok(). This means that strtok_r() can safely be used in
+N    * multi-threaded programs, and also that you can tokenise two
+N    * strings in parallel.
+N    */
+N
+Nextern _ARMABI void *memset(void * /*s*/, int /*c*/, size_t /*n*/) __attribute__((__nonnull__(1)));
+Xextern __declspec(__nothrow) void *memset(void *  , int  , size_t  ) __attribute__((__nonnull__(1)));
+N   /*
+N    * copies the value of c (converted to an unsigned char) into each of the
+N    * first n charactes of the object pointed to by s.
+N    * Returns: the value of s.
+N    */
+Nextern _ARMABI char *strerror(int /*errnum*/);
+Xextern __declspec(__nothrow) char *strerror(int  );
+N   /*
+N    * maps the error number in errnum to an error message string.
+N    * Returns: a pointer to the string, the contents of which are
+N    *          implementation-defined. The array pointed to shall not be
+N    *          modified by the program, but may be overwritten by a
+N    *          subsequent call to the strerror function.
+N    */
+Nextern _ARMABI size_t strlen(const char * /*s*/) __attribute__((__nonnull__(1)));
+Xextern __declspec(__nothrow) size_t strlen(const char *  ) __attribute__((__nonnull__(1)));
+N   /*
+N    * computes the length of the string pointed to by s.
+N    * Returns: the number of characters that precede the terminating null
+N    *          character.
+N    */
+N
+Nextern _ARMABI size_t strlcpy(char * /*dst*/, const char * /*src*/, size_t /*len*/) __attribute__((__nonnull__(1,2)));
+Xextern __declspec(__nothrow) size_t strlcpy(char *  , const char *  , size_t  ) __attribute__((__nonnull__(1,2)));
+N   /*
+N    * copies the string src into the string dst, using no more than
+N    * len bytes of dst. Always null-terminates dst _within the
+N    * length len (i.e. will copy at most len-1 bytes of string plus
+N    * a NUL), unless len is actually zero.
+N    * 
+N    * Return value is the length of the string that _would_ have
+N    * been written, i.e. the length of src. Thus, the operation
+N    * succeeded without truncation if and only if ret < len;
+N    * otherwise, the value in ret tells you how big to make dst if
+N    * you decide to reallocate it. (That value does _not_ include
+N    * the NUL.)
+N    * 
+N    * This is a BSD-derived library extension, which we are
+N    * permitted to declare in a standard header because ISO defines
+N    * function names beginning with 'str' as reserved for future
+N    * expansion of <string.h>.
+N    */
+N
+Nextern _ARMABI size_t strlcat(char * /*dst*/, const char * /*src*/, size_t /*len*/) __attribute__((__nonnull__(1,2)));
+Xextern __declspec(__nothrow) size_t strlcat(char *  , const char *  , size_t  ) __attribute__((__nonnull__(1,2)));
+N   /*
+N    * concatenates the string src to the string dst, using no more
+N    * than len bytes of dst. Always null-terminates dst _within the
+N    * length len (i.e. will copy at most len-1 bytes of string plus
+N    * a NUL), unless len is actually zero.
+N    * 
+N    * Return value is the length of the string that _would_ have
+N    * been written, i.e. the length of src plus the original length
+N    * of dst. Thus, the operation succeeded without truncation if
+N    * and only if ret < len; otherwise, the value in ret tells you
+N    * how big to make dst if you decide to reallocate it. (That
+N    * value does _not_ include the NUL.)
+N    * 
+N    * If no NUL is encountered within the first len bytes of dst,
+N    * then the length of dst is considered to have been equal to
+N    * len for the purposes of the return value (as if there were a
+N    * NUL at dst[len]). Thus, the return value in this case is len
+N    * + strlen(src).
+N    * 
+N    * This is a BSD-derived library extension, which we are
+N    * permitted to declare in a standard header because ISO defines
+N    * function names beginning with 'str' as reserved for future
+N    * expansion of <string.h>.
+N    */
+N
+Nextern _ARMABI void _membitcpybl(void * /*dest*/, const void * /*src*/, int /*destoffset*/, int /*srcoffset*/, size_t /*nbits*/) __attribute__((__nonnull__(1,2)));
+Xextern __declspec(__nothrow) void _membitcpybl(void *  , const void *  , int  , int  , size_t  ) __attribute__((__nonnull__(1,2)));
+Nextern _ARMABI void _membitcpybb(void * /*dest*/, const void * /*src*/, int /*destoffset*/, int /*srcoffset*/, size_t /*nbits*/) __attribute__((__nonnull__(1,2)));
+Xextern __declspec(__nothrow) void _membitcpybb(void *  , const void *  , int  , int  , size_t  ) __attribute__((__nonnull__(1,2)));
+Nextern _ARMABI void _membitcpyhl(void * /*dest*/, const void * /*src*/, int /*destoffset*/, int /*srcoffset*/, size_t /*nbits*/) __attribute__((__nonnull__(1,2)));
+Xextern __declspec(__nothrow) void _membitcpyhl(void *  , const void *  , int  , int  , size_t  ) __attribute__((__nonnull__(1,2)));
+Nextern _ARMABI void _membitcpyhb(void * /*dest*/, const void * /*src*/, int /*destoffset*/, int /*srcoffset*/, size_t /*nbits*/) __attribute__((__nonnull__(1,2)));
+Xextern __declspec(__nothrow) void _membitcpyhb(void *  , const void *  , int  , int  , size_t  ) __attribute__((__nonnull__(1,2)));
+Nextern _ARMABI void _membitcpywl(void * /*dest*/, const void * /*src*/, int /*destoffset*/, int /*srcoffset*/, size_t /*nbits*/) __attribute__((__nonnull__(1,2)));
+Xextern __declspec(__nothrow) void _membitcpywl(void *  , const void *  , int  , int  , size_t  ) __attribute__((__nonnull__(1,2)));
+Nextern _ARMABI void _membitcpywb(void * /*dest*/, const void * /*src*/, int /*destoffset*/, int /*srcoffset*/, size_t /*nbits*/) __attribute__((__nonnull__(1,2)));
+Xextern __declspec(__nothrow) void _membitcpywb(void *  , const void *  , int  , int  , size_t  ) __attribute__((__nonnull__(1,2)));
+Nextern _ARMABI void _membitmovebl(void * /*dest*/, const void * /*src*/, int /*destoffset*/, int /*srcoffset*/, size_t /*nbits*/) __attribute__((__nonnull__(1,2)));
+Xextern __declspec(__nothrow) void _membitmovebl(void *  , const void *  , int  , int  , size_t  ) __attribute__((__nonnull__(1,2)));
+Nextern _ARMABI void _membitmovebb(void * /*dest*/, const void * /*src*/, int /*destoffset*/, int /*srcoffset*/, size_t /*nbits*/) __attribute__((__nonnull__(1,2)));
+Xextern __declspec(__nothrow) void _membitmovebb(void *  , const void *  , int  , int  , size_t  ) __attribute__((__nonnull__(1,2)));
+Nextern _ARMABI void _membitmovehl(void * /*dest*/, const void * /*src*/, int /*destoffset*/, int /*srcoffset*/, size_t /*nbits*/) __attribute__((__nonnull__(1,2)));
+Xextern __declspec(__nothrow) void _membitmovehl(void *  , const void *  , int  , int  , size_t  ) __attribute__((__nonnull__(1,2)));
+Nextern _ARMABI void _membitmovehb(void * /*dest*/, const void * /*src*/, int /*destoffset*/, int /*srcoffset*/, size_t /*nbits*/) __attribute__((__nonnull__(1,2)));
+Xextern __declspec(__nothrow) void _membitmovehb(void *  , const void *  , int  , int  , size_t  ) __attribute__((__nonnull__(1,2)));
+Nextern _ARMABI void _membitmovewl(void * /*dest*/, const void * /*src*/, int /*destoffset*/, int /*srcoffset*/, size_t /*nbits*/) __attribute__((__nonnull__(1,2)));
+Xextern __declspec(__nothrow) void _membitmovewl(void *  , const void *  , int  , int  , size_t  ) __attribute__((__nonnull__(1,2)));
+Nextern _ARMABI void _membitmovewb(void * /*dest*/, const void * /*src*/, int /*destoffset*/, int /*srcoffset*/, size_t /*nbits*/) __attribute__((__nonnull__(1,2)));
+Xextern __declspec(__nothrow) void _membitmovewb(void *  , const void *  , int  , int  , size_t  ) __attribute__((__nonnull__(1,2)));
+N    /*
+N     * Copies or moves a piece of memory from one place to another,
+N     * with one-bit granularity. So you can start or finish a copy
+N     * part way through a byte, and you can copy between regions
+N     * with different alignment within a byte.
+N     * 
+N     * All these functions have the same prototype: two void *
+N     * pointers for destination and source, then two integers
+N     * giving the bit offset from those pointers, and finally the
+N     * number of bits to copy.
+N     * 
+N     * Just like memcpy and memmove, the "cpy" functions copy as
+N     * fast as they can in the assumption that the memory regions
+N     * do not overlap, while the "move" functions cope correctly
+N     * with overlap.
+N     *
+N     * Treating memory as a stream of individual bits requires
+N     * defining a convention about what order those bits are
+N     * considered to be arranged in. The above functions support
+N     * multiple conventions:
+N     * 
+N     *  - the "bl" functions consider the unit of memory to be the
+N     *    byte, and consider the bits within each byte to be
+N     *    arranged in little-endian fashion, so that the LSB comes
+N     *    first. (For example, membitcpybl(a,b,0,7,1) would copy
+N     *    the MSB of the byte at b to the LSB of the byte at a.)
+N     * 
+N     *  - the "bb" functions consider the unit of memory to be the
+N     *    byte, and consider the bits within each byte to be
+N     *    arranged in big-endian fashion, so that the MSB comes
+N     *    first.
+N     * 
+N     *  - the "hl" functions consider the unit of memory to be the
+N     *    16-bit halfword, and consider the bits within each word
+N     *    to be arranged in little-endian fashion.
+N     * 
+N     *  - the "hb" functions consider the unit of memory to be the
+N     *    16-bit halfword, and consider the bits within each word
+N     *    to be arranged in big-endian fashion.
+N     * 
+N     *  - the "wl" functions consider the unit of memory to be the
+N     *    32-bit word, and consider the bits within each word to be
+N     *    arranged in little-endian fashion.
+N     * 
+N     *  - the "wb" functions consider the unit of memory to be the
+N     *    32-bit word, and consider the bits within each word to be
+N     *    arranged in big-endian fashion.
+N     */
+N
+N    #ifdef __cplusplus
+S         }  /* extern "C" */
+S      }  /* namespace std */
+N    #endif /* __cplusplus */
+N  #endif /* __STRING_DECLS */
+N
+N  #ifdef __cplusplus
+S    #ifndef __STRING_NO_EXPORTS
+S      using ::std::size_t;
+S      using ::std::memcpy;
+S      using ::std::memmove;
+S      using ::std::strcpy;
+S      using ::std::strncpy;
+S      using ::std::strcat;
+S      using ::std::strncat;
+S      using ::std::memcmp;
+S      using ::std::strcmp;
+S      using ::std::strncmp;
+S      using ::std::strcasecmp;
+S      using ::std::strncasecmp;
+S      using ::std::strcoll;
+S      using ::std::strxfrm;
+S      using ::std::memchr;
+S      using ::std::strchr;
+S      using ::std::strcspn;
+S      using ::std::strpbrk;
+S      using ::std::strrchr;
+S      using ::std::strspn;
+S      using ::std::strstr;
+S      using ::std::strtok;
+S#ifndef __STRICT_ANSI__
+S      using ::std::strtok_r;
+S#endif
+S      using ::std::_strtok_r;
+S      using ::std::memset;
+S      using ::std::strerror;
+S      using ::std::strlen;
+S      using ::std::strlcpy;
+S      using ::std::strlcat;
+S      using ::std::_membitcpybl;
+S      using ::std::_membitcpybb;
+S      using ::std::_membitcpyhl;
+S      using ::std::_membitcpyhb;
+S      using ::std::_membitcpywl;
+S      using ::std::_membitcpywb;
+S      using ::std::_membitmovebl;
+S      using ::std::_membitmovebb;
+S      using ::std::_membitmovehl;
+S      using ::std::_membitmovehb;
+S      using ::std::_membitmovewl;
+S      using ::std::_membitmovewb;
+S    #endif /* __STRING_NO_EXPORTS */
+N  #endif /* __cplusplus */
+N
+N#endif
+N
+N/* end of string.h */
+N
+L 33 "lpc_chip_82x\src\ring_buffer.c" 2
+N#include "ring_buffer.h"
+L 1 ".\lpc_chip_82x\inc\ring_buffer.h" 1
+N/*
+N * @brief Common ring buffer support functions
+N *
+N * @note
+N * Copyright(C) NXP Semiconductors, 2012
+N * All rights reserved.
+N *
+N * @par
+N * Software that is described herein is for illustrative purposes only
+N * which provides customers with programming information regarding the
+N * LPC products.  This software is supplied "AS IS" without any warranties of
+N * any kind, and NXP Semiconductors and its licensor disclaim any and
+N * all warranties, express or implied, including all implied warranties of
+N * merchantability, fitness for a particular purpose and non-infringement of
+N * intellectual property rights.  NXP Semiconductors assumes no responsibility
+N * or liability for the use of the software, conveys no license or rights under any
+N * patent, copyright, mask work right, or any other intellectual property rights in
+N * or to any products. NXP Semiconductors reserves the right to make changes
+N * in the software without notification. NXP Semiconductors also makes no
+N * representation or warranty that such application will be suitable for the
+N * specified use without further testing or modification.
+N *
+N * @par
+N * Permission to use, copy, modify, and distribute this software and its
+N * documentation is hereby granted, under NXP Semiconductors' and its
+N * licensor's relevant copyrights in the software, without fee, provided that it
+N * is used in conjunction with NXP Semiconductors microcontrollers.  This
+N * copyright, permission, and disclaimer notice must appear in all copies of
+N * this code.
+N */
+N
+N#ifndef __RING_BUFFER_H_
+N#define __RING_BUFFER_H_
+N
+N#include "lpc_types.h"
+L 1 ".\lpc_chip_82x\inc\lpc_types.h" 1
+N/*
+N * @brief Common types used in LPC functions
+N *
+N * @note
+N * Copyright(C) NXP Semiconductors, 2012
+N * All rights reserved.
+N *
+N * @par
+N * Software that is described herein is for illustrative purposes only
+N * which provides customers with programming information regarding the
+N * LPC products.  This software is supplied "AS IS" without any warranties of
+N * any kind, and NXP Semiconductors and its licensor disclaim any and
+N * all warranties, express or implied, including all implied warranties of
+N * merchantability, fitness for a particular purpose and non-infringement of
+N * intellectual property rights.  NXP Semiconductors assumes no responsibility
+N * or liability for the use of the software, conveys no license or rights under any
+N * patent, copyright, mask work right, or any other intellectual property rights in
+N * or to any products. NXP Semiconductors reserves the right to make changes
+N * in the software without notification. NXP Semiconductors also makes no
+N * representation or warranty that such application will be suitable for the
+N * specified use without further testing or modification.
+N *
+N * @par
+N * Permission to use, copy, modify, and distribute this software and its
+N * documentation is hereby granted, under NXP Semiconductors' and its
+N * licensor's relevant copyrights in the software, without fee, provided that it
+N * is used in conjunction with NXP Semiconductors microcontrollers.  This
+N * copyright, permission, and disclaimer notice must appear in all copies of
+N * this code.
+N */
+N
+N#ifndef __LPC_TYPES_H_
+N#define __LPC_TYPES_H_
+N
+N#include <stdint.h>
+L 1 "C:\Keil_v5\ARM\ARMCC\Bin\..\include\stdint.h" 1
+N/* Copyright (C) ARM Ltd., 1999,2014 */
+N/* All rights reserved */
+N
+N/*
+N * RCS $Revision$
+N * Checkin $Date$
+N * Revising $Author: agrant $
+N */
+N
+N#ifndef __stdint_h
+N#define __stdint_h
+N#define __ARMCLIB_VERSION 5060016
+N
+N  #ifdef __INT64_TYPE__
+S    /* armclang predefines '__INT64_TYPE__' and '__INT64_C_SUFFIX__' */
+S    #define __INT64 __INT64_TYPE__
+N  #else
+N    /* armcc has builtin '__int64' which can be used in --strict mode */
+N    #define __INT64 __int64
+N    #define __INT64_C_SUFFIX__ ll
+N  #endif
+N  #define __PASTE2(x, y) x ## y
+N  #define __PASTE(x, y) __PASTE2(x, y)
+N  #define __INT64_C(x)  __ESCAPE__(__PASTE(x, __INT64_C_SUFFIX__))
+N  #define __UINT64_C(x)  __ESCAPE__(__PASTE(x ## u, __INT64_C_SUFFIX__))
+N  #if defined(__clang__) || (defined(__ARMCC_VERSION) && !defined(__STRICT_ANSI__))
+X  #if 0L || (1L && !0L)
+N    /* armclang and non-strict armcc allow 'long long' in system headers */
+N    #define __LONGLONG long long
+N  #else
+S    /* strict armcc has '__int64' */
+S    #define __LONGLONG __int64
+N  #endif
+N
+N  #ifndef __STDINT_DECLS
+N  #define __STDINT_DECLS
+N
+N    #undef __CLIBNS
+N
+N    #ifdef __cplusplus
+S      namespace std {
+S          #define __CLIBNS std::
+S          extern "C" {
+N    #else
+N      #define __CLIBNS
+N    #endif  /* __cplusplus */
+N
+N
+N/*
+N * 'signed' is redundant below, except for 'signed char' and if
+N * the typedef is used to declare a bitfield.
+N */
+N
+N    /* 7.18.1.1 */
+N
+N    /* exact-width signed integer types */
+Ntypedef   signed          char int8_t;
+Ntypedef   signed short     int int16_t;
+Ntypedef   signed           int int32_t;
+Ntypedef   signed       __INT64 int64_t;
+Xtypedef   signed       __int64 int64_t;
+N
+N    /* exact-width unsigned integer types */
+Ntypedef unsigned          char uint8_t;
+Ntypedef unsigned short     int uint16_t;
+Ntypedef unsigned           int uint32_t;
+Ntypedef unsigned       __INT64 uint64_t;
+Xtypedef unsigned       __int64 uint64_t;
+N
+N    /* 7.18.1.2 */
+N
+N    /* smallest type of at least n bits */
+N    /* minimum-width signed integer types */
+Ntypedef   signed          char int_least8_t;
+Ntypedef   signed short     int int_least16_t;
+Ntypedef   signed           int int_least32_t;
+Ntypedef   signed       __INT64 int_least64_t;
+Xtypedef   signed       __int64 int_least64_t;
+N
+N    /* minimum-width unsigned integer types */
+Ntypedef unsigned          char uint_least8_t;
+Ntypedef unsigned short     int uint_least16_t;
+Ntypedef unsigned           int uint_least32_t;
+Ntypedef unsigned       __INT64 uint_least64_t;
+Xtypedef unsigned       __int64 uint_least64_t;
+N
+N    /* 7.18.1.3 */
+N
+N    /* fastest minimum-width signed integer types */
+Ntypedef   signed           int int_fast8_t;
+Ntypedef   signed           int int_fast16_t;
+Ntypedef   signed           int int_fast32_t;
+Ntypedef   signed       __INT64 int_fast64_t;
+Xtypedef   signed       __int64 int_fast64_t;
+N
+N    /* fastest minimum-width unsigned integer types */
+Ntypedef unsigned           int uint_fast8_t;
+Ntypedef unsigned           int uint_fast16_t;
+Ntypedef unsigned           int uint_fast32_t;
+Ntypedef unsigned       __INT64 uint_fast64_t;
+Xtypedef unsigned       __int64 uint_fast64_t;
+N
+N    /* 7.18.1.4 integer types capable of holding object pointers */
+N#if __sizeof_ptr == 8
+X#if 4 == 8
+Stypedef   signed       __INT64 intptr_t;
+Stypedef unsigned       __INT64 uintptr_t;
+N#else
+Ntypedef   signed           int intptr_t;
+Ntypedef unsigned           int uintptr_t;
+N#endif
+N
+N    /* 7.18.1.5 greatest-width integer types */
+Ntypedef   signed     __LONGLONG intmax_t;
+Xtypedef   signed     long long intmax_t;
+Ntypedef unsigned     __LONGLONG uintmax_t;
+Xtypedef unsigned     long long uintmax_t;
+N
+N
+N#if !defined(__cplusplus) || defined(__STDC_LIMIT_MACROS)
+X#if !0L || 0L
+N
+N    /* 7.18.2.1 */
+N
+N    /* minimum values of exact-width signed integer types */
+N#define INT8_MIN                   -128
+N#define INT16_MIN                -32768
+N#define INT32_MIN          (~0x7fffffff)   /* -2147483648 is unsigned */
+N#define INT64_MIN  __INT64_C(~0x7fffffffffffffff) /* -9223372036854775808 is unsigned */
+N
+N    /* maximum values of exact-width signed integer types */
+N#define INT8_MAX                    127
+N#define INT16_MAX                 32767
+N#define INT32_MAX            2147483647
+N#define INT64_MAX  __INT64_C(9223372036854775807)
+N
+N    /* maximum values of exact-width unsigned integer types */
+N#define UINT8_MAX                   255
+N#define UINT16_MAX                65535
+N#define UINT32_MAX           4294967295u
+N#define UINT64_MAX __UINT64_C(18446744073709551615)
+N
+N    /* 7.18.2.2 */
+N
+N    /* minimum values of minimum-width signed integer types */
+N#define INT_LEAST8_MIN                   -128
+N#define INT_LEAST16_MIN                -32768
+N#define INT_LEAST32_MIN          (~0x7fffffff)
+N#define INT_LEAST64_MIN  __INT64_C(~0x7fffffffffffffff)
+N
+N    /* maximum values of minimum-width signed integer types */
+N#define INT_LEAST8_MAX                    127
+N#define INT_LEAST16_MAX                 32767
+N#define INT_LEAST32_MAX            2147483647
+N#define INT_LEAST64_MAX  __INT64_C(9223372036854775807)
+N
+N    /* maximum values of minimum-width unsigned integer types */
+N#define UINT_LEAST8_MAX                   255
+N#define UINT_LEAST16_MAX                65535
+N#define UINT_LEAST32_MAX           4294967295u
+N#define UINT_LEAST64_MAX __UINT64_C(18446744073709551615)
+N
+N    /* 7.18.2.3 */
+N
+N    /* minimum values of fastest minimum-width signed integer types */
+N#define INT_FAST8_MIN           (~0x7fffffff)
+N#define INT_FAST16_MIN          (~0x7fffffff)
+N#define INT_FAST32_MIN          (~0x7fffffff)
+N#define INT_FAST64_MIN  __INT64_C(~0x7fffffffffffffff)
+N
+N    /* maximum values of fastest minimum-width signed integer types */
+N#define INT_FAST8_MAX             2147483647
+N#define INT_FAST16_MAX            2147483647
+N#define INT_FAST32_MAX            2147483647
+N#define INT_FAST64_MAX  __INT64_C(9223372036854775807)
+N
+N    /* maximum values of fastest minimum-width unsigned integer types */
+N#define UINT_FAST8_MAX            4294967295u
+N#define UINT_FAST16_MAX           4294967295u
+N#define UINT_FAST32_MAX           4294967295u
+N#define UINT_FAST64_MAX __UINT64_C(18446744073709551615)
+N
+N    /* 7.18.2.4 */
+N
+N    /* minimum value of pointer-holding signed integer type */
+N#if __sizeof_ptr == 8
+X#if 4 == 8
+S#define INTPTR_MIN INT64_MIN
+N#else
+N#define INTPTR_MIN INT32_MIN
+N#endif
+N
+N    /* maximum value of pointer-holding signed integer type */
+N#if __sizeof_ptr == 8
+X#if 4 == 8
+S#define INTPTR_MAX INT64_MAX
+N#else
+N#define INTPTR_MAX INT32_MAX
+N#endif
+N
+N    /* maximum value of pointer-holding unsigned integer type */
+N#if __sizeof_ptr == 8
+X#if 4 == 8
+S#define UINTPTR_MAX UINT64_MAX
+N#else
+N#define UINTPTR_MAX UINT32_MAX
+N#endif
+N
+N    /* 7.18.2.5 */
+N
+N    /* minimum value of greatest-width signed integer type */
+N#define INTMAX_MIN  __ESCAPE__(~0x7fffffffffffffffll)
+N
+N    /* maximum value of greatest-width signed integer type */
+N#define INTMAX_MAX  __ESCAPE__(9223372036854775807ll)
+N
+N    /* maximum value of greatest-width unsigned integer type */
+N#define UINTMAX_MAX __ESCAPE__(18446744073709551615ull)
+N
+N    /* 7.18.3 */
+N
+N    /* limits of ptrdiff_t */
+N#if __sizeof_ptr == 8
+X#if 4 == 8
+S#define PTRDIFF_MIN INT64_MIN
+S#define PTRDIFF_MAX INT64_MAX
+N#else
+N#define PTRDIFF_MIN INT32_MIN
+N#define PTRDIFF_MAX INT32_MAX
+N#endif
+N
+N    /* limits of sig_atomic_t */
+N#define SIG_ATOMIC_MIN (~0x7fffffff)
+N#define SIG_ATOMIC_MAX   2147483647
+N
+N    /* limit of size_t */
+N#if __sizeof_ptr == 8
+X#if 4 == 8
+S#define SIZE_MAX UINT64_MAX
+N#else
+N#define SIZE_MAX UINT32_MAX
+N#endif
+N
+N    /* limits of wchar_t */
+N    /* NB we have to undef and redef because they're defined in both
+N     * stdint.h and wchar.h */
+N#undef WCHAR_MIN
+N#undef WCHAR_MAX
+N
+N#if defined(__WCHAR32) || (defined(__ARM_SIZEOF_WCHAR_T) && __ARM_SIZEOF_WCHAR_T == 4)
+X#if 0L || (0L && __ARM_SIZEOF_WCHAR_T == 4)
+S  #define WCHAR_MIN   0
+S  #define WCHAR_MAX   0xffffffffU
+N#else
+N  #define WCHAR_MIN   0
+N  #define WCHAR_MAX   65535
+N#endif
+N
+N    /* limits of wint_t */
+N#define WINT_MIN (~0x7fffffff)
+N#define WINT_MAX 2147483647
+N
+N#endif /* __STDC_LIMIT_MACROS */
+N
+N#if !defined(__cplusplus) || defined(__STDC_CONSTANT_MACROS)
+X#if !0L || 0L
+N
+N    /* 7.18.4.1 macros for minimum-width integer constants */
+N#define INT8_C(x)   (x)
+N#define INT16_C(x)  (x)
+N#define INT32_C(x)  (x)
+N#define INT64_C(x)  __INT64_C(x)
+N
+N#define UINT8_C(x)  (x ## u)
+N#define UINT16_C(x) (x ## u)
+N#define UINT32_C(x) (x ## u)
+N#define UINT64_C(x) __UINT64_C(x)
+N
+N    /* 7.18.4.2 macros for greatest-width integer constants */
+N#define INTMAX_C(x)  __ESCAPE__(x ## ll)
+N#define UINTMAX_C(x) __ESCAPE__(x ## ull)
+N
+N#endif /* __STDC_CONSTANT_MACROS */
+N
+N    #ifdef __cplusplus
+S         }  /* extern "C" */
+S      }  /* namespace std */
+N    #endif /* __cplusplus */
+N  #endif /* __STDINT_DECLS */
+N
+N  #ifdef __cplusplus
+S    #ifndef __STDINT_NO_EXPORTS
+S      using ::std::int8_t;
+S      using ::std::int16_t;
+S      using ::std::int32_t;
+S      using ::std::int64_t;
+S      using ::std::uint8_t;
+S      using ::std::uint16_t;
+S      using ::std::uint32_t;
+S      using ::std::uint64_t;
+S      using ::std::int_least8_t;
+S      using ::std::int_least16_t;
+S      using ::std::int_least32_t;
+S      using ::std::int_least64_t;
+S      using ::std::uint_least8_t;
+S      using ::std::uint_least16_t;
+S      using ::std::uint_least32_t;
+S      using ::std::uint_least64_t;
+S      using ::std::int_fast8_t;
+S      using ::std::int_fast16_t;
+S      using ::std::int_fast32_t;
+S      using ::std::int_fast64_t;
+S      using ::std::uint_fast8_t;
+S      using ::std::uint_fast16_t;
+S      using ::std::uint_fast32_t;
+S      using ::std::uint_fast64_t;
+S      using ::std::intptr_t;
+S      using ::std::uintptr_t;
+S      using ::std::intmax_t;
+S      using ::std::uintmax_t;
+S    #endif
+N  #endif /* __cplusplus */
+N
+N#undef __INT64
+N#undef __LONGLONG
+N
+N#endif /* __stdint_h */
+N
+N/* end of stdint.h */
+L 36 ".\lpc_chip_82x\inc\lpc_types.h" 2
+N#include <stdbool.h>
+L 1 "C:\Keil_v5\ARM\ARMCC\Bin\..\include\stdbool.h" 1
+N/* stdbool.h: ISO/IEC 9899:1999 (C99), section 7.16 */
+N
+N/* Copyright (C) ARM Ltd., 2002
+N * All rights reserved
+N * RCS $Revision$
+N * Checkin $Date$
+N * Revising $Author: drodgman $
+N */
+N
+N#ifndef __bool_true_false_are_defined
+N#define __bool_true_false_are_defined 1
+N#define __ARMCLIB_VERSION 5060016
+N
+N  #ifndef __cplusplus /* In C++, 'bool', 'true' and 'false' and keywords */
+N    #define bool _Bool
+N    #define true 1
+N    #define false 0
+N  #else
+S    #ifdef __GNUC__
+S      /* GNU C++ supports direct inclusion of stdbool.h to provide C99
+S         compatibility by defining _Bool */
+S      #define _Bool bool
+S    #endif
+N  #endif
+N
+N#endif /* __bool_true_false_are_defined */
+N
+L 37 ".\lpc_chip_82x\inc\lpc_types.h" 2
+N
+N/** @defgroup LPC_Types CHIP: LPC Common Types
+N * @ingroup CHIP_Common
+N * @{
+N */
+N
+N/** @defgroup LPC_Types_Public_Types LPC Public Types
+N * @{
+N */
+N
+N/**
+N * @brief Boolean Type definition
+N */
+Ntypedef enum {FALSE = 0, TRUE = !FALSE} Bool;
+N
+N/**
+N * @brief Boolean Type definition
+N */
+N#if !defined(__cplusplus)
+X#if !0L
+N// typedef enum {false = 0, true = !false} bool;
+N#endif
+N
+N/**
+N * @brief Flag Status and Interrupt Flag Status type definition
+N */
+Ntypedef enum {RESET = 0, SET = !RESET} FlagStatus, IntStatus, SetState;
+N#define PARAM_SETSTATE(State) ((State == RESET) || (State == SET))
+N
+N/**
+N * @brief Functional State Definition
+N */
+Ntypedef enum {DISABLE = 0, ENABLE = !DISABLE} FunctionalState;
+N#define PARAM_FUNCTIONALSTATE(State) ((State == DISABLE) || (State == ENABLE))
+N
+N/**
+N * @ Status type definition
+N */
+Ntypedef enum {ERROR = 0, SUCCESS = !ERROR} Status;
+N
+N/**
+N * Read/Write transfer type mode (Block or non-block)
+N */
+Ntypedef enum {
+N	NONE_BLOCKING = 0,		/**< None Blocking type */
+N	BLOCKING,				/**< Blocking type */
+N} TRANSFER_BLOCK_T;
+N
+N/** Pointer to Function returning Void (any number of parameters) */
+Ntypedef void (*PFV)();
+N
+N/** Pointer to Function returning int32_t (any number of parameters) */
+Ntypedef int32_t (*PFI)();
+N
+N/**
+N * @}
+N */
+N
+N/** @defgroup LPC_Types_Public_Macros  LPC Public Macros
+N * @{
+N */
+N
+N/* _BIT(n) sets the bit at position "n"
+N * _BIT(n) is intended to be used in "OR" and "AND" expressions:
+N * e.g., "(_BIT(3) | _BIT(7))".
+N */
+N#undef _BIT
+N/* Set bit macro */
+N#define _BIT(n) (1 << (n))
+N
+N/* _SBF(f,v) sets the bit field starting at position "f" to value "v".
+N * _SBF(f,v) is intended to be used in "OR" and "AND" expressions:
+N * e.g., "((_SBF(5,7) | _SBF(12,0xF)) & 0xFFFF)"
+N */
+N#undef _SBF
+N/* Set bit field macro */
+N#define _SBF(f, v) ((v) << (f))
+N
+N/* _BITMASK constructs a symbol with 'field_width' least significant
+N * bits set.
+N * e.g., _BITMASK(5) constructs '0x1F', _BITMASK(16) == 0xFFFF
+N * The symbol is intended to be used to limit the bit field width
+N * thusly:
+N * <a_register> = (any_expression) & _BITMASK(x), where 0 < x <= 32.
+N * If "any_expression" results in a value that is larger than can be
+N * contained in 'x' bits, the bits above 'x - 1' are masked off.  When
+N * used with the _SBF example above, the example would be written:
+N * a_reg = ((_SBF(5,7) | _SBF(12,0xF)) & _BITMASK(16))
+N * This ensures that the value written to a_reg is no wider than
+N * 16 bits, and makes the code easier to read and understand.
+N */
+N#undef _BITMASK
+N/* Bitmask creation macro */
+N#define _BITMASK(field_width) ( _BIT(field_width) - 1)
+N
+N/* NULL pointer */
+N#ifndef NULL
+S#define NULL ((void *) 0)
+N#endif
+N
+N/* Number of elements in an array */
+N#define NELEMENTS(array)  (sizeof(array) / sizeof(array[0]))
+N
+N/* Static data/function define */
+N#define STATIC static
+N/* External data/function define */
+N#define EXTERN extern
+N
+N#if !defined(MAX)
+X#if !0L
+N#define MAX(a, b) (((a) > (b)) ? (a) : (b))
+N#endif
+N#if !defined(MIN)
+X#if !0L
+N#define MIN(a, b) (((a) < (b)) ? (a) : (b))
+N#endif
+N
+N/**
+N * @}
+N */
+N
+N/* Old Type Definition compatibility */
+N/** @addtogroup LPC_Types_Public_Types
+N * @{
+N */
+N
+N/** LPC type for character type */
+Ntypedef char CHAR;
+N
+N/** LPC type for 8 bit unsigned value */
+Ntypedef uint8_t UNS_8;
+N
+N/** LPC type for 8 bit signed value */
+Ntypedef int8_t INT_8;
+N
+N/** LPC type for 16 bit unsigned value */
+Ntypedef uint16_t UNS_16;
+N
+N/** LPC type for 16 bit signed value */
+Ntypedef int16_t INT_16;
+N
+N/** LPC type for 32 bit unsigned value */
+Ntypedef uint32_t UNS_32;
+N
+N/** LPC type for 32 bit signed value */
+Ntypedef int32_t INT_32;
+N
+N/** LPC type for 64 bit signed value */
+Ntypedef int64_t INT_64;
+N
+N/** LPC type for 64 bit unsigned value */
+Ntypedef uint64_t UNS_64;
+N
+N#ifdef __CODE_RED
+S#define BOOL_32 bool
+S#define BOOL_16 bool
+S#define BOOL_8  bool
+N#else
+N/** 32 bit boolean type */
+Ntypedef bool BOOL_32;
+Xtypedef _Bool BOOL_32;
+N
+N/** 16 bit boolean type */
+Ntypedef bool BOOL_16;
+Xtypedef _Bool BOOL_16;
+N
+N/** 8 bit boolean type */
+Ntypedef bool BOOL_8;
+Xtypedef _Bool BOOL_8;
+N#endif
+N
+N#ifdef __CC_ARM
+N#define INLINE  __inline
+N#else
+S#define INLINE inline
+N#endif
+N
+N/**
+N * @}
+N */
+N
+N/**
+N * @}
+N */
+N
+N#endif /* __LPC_TYPES_H_ */
+L 36 ".\lpc_chip_82x\inc\ring_buffer.h" 2
+N
+N/** @defgroup Ring_Buffer CHIP: Simple ring buffer implementation
+N * @ingroup CHIP_Common
+N * @{
+N */
+N
+N/**
+N * @brief Ring buffer structure
+N */
+Ntypedef struct {
+N	void *data;
+N	int count;
+N	int itemSz;
+N	uint32_t head;
+N	uint32_t tail;
+N} RINGBUFF_T;
+N
+N/**
+N * @def		RB_VHEAD(rb)
+N * volatile typecasted head index
+N */
+N#define RB_VHEAD(rb)              (*(volatile uint32_t *) &(rb)->head)
+N
+N/**
+N * @def		RB_VTAIL(rb)
+N * volatile typecasted tail index
+N */
+N#define RB_VTAIL(rb)              (*(volatile uint32_t *) &(rb)->tail)
+N
+N/**
+N * @brief	Initialize ring buffer
+N * @param	RingBuff	: Pointer to ring buffer to initialize
+N * @param	buffer		: Pointer to buffer to associate with RingBuff
+N * @param	itemSize	: Size of each buffer item size
+N * @param	count		: Size of ring buffer
+N * @note	Memory pointed by @a buffer must have correct alignment of
+N * 			@a itemSize, and @a count must be a power of 2 and must at
+N * 			least be 2 or greater.
+N * @return	Nothing
+N */
+Nint RingBuffer_Init(RINGBUFF_T *RingBuff, void *buffer, int itemSize, int count);
+N
+N/**
+N * @brief	Resets the ring buffer to empty
+N * @param	RingBuff	: Pointer to ring buffer
+N * @return	Nothing
+N */
+NSTATIC INLINE void RingBuffer_Flush(RINGBUFF_T *RingBuff)
+Xstatic __inline void RingBuffer_Flush(RINGBUFF_T *RingBuff)
+N{
+N	RingBuff->head = RingBuff->tail = 0;
+N}
+N
+N/**
+N * @brief	Return size the ring buffer
+N * @param	RingBuff	: Pointer to ring buffer
+N * @return	Size of the ring buffer in bytes
+N */
+NSTATIC INLINE int RingBuffer_GetSize(RINGBUFF_T *RingBuff)
+Xstatic __inline int RingBuffer_GetSize(RINGBUFF_T *RingBuff)
+N{
+N	return RingBuff->count;
+N}
+N
+N/**
+N * @brief	Return number of items in the ring buffer
+N * @param	RingBuff	: Pointer to ring buffer
+N * @return	Number of items in the ring buffer
+N */
+NSTATIC INLINE int RingBuffer_GetCount(RINGBUFF_T *RingBuff)
+Xstatic __inline int RingBuffer_GetCount(RINGBUFF_T *RingBuff)
+N{
+N	return RB_VHEAD(RingBuff) - RB_VTAIL(RingBuff);
+X	return (*(volatile uint32_t *) &(RingBuff)->head) - (*(volatile uint32_t *) &(RingBuff)->tail);
+N}
+N
+N/**
+N * @brief	Return number of free items in the ring buffer
+N * @param	RingBuff	: Pointer to ring buffer
+N * @return	Number of free items in the ring buffer
+N */
+NSTATIC INLINE int RingBuffer_GetFree(RINGBUFF_T *RingBuff)
+Xstatic __inline int RingBuffer_GetFree(RINGBUFF_T *RingBuff)
+N{
+N	return RingBuff->count - RingBuffer_GetCount(RingBuff);
+N}
+N
+N/**
+N * @brief	Return number of items in the ring buffer
+N * @param	RingBuff	: Pointer to ring buffer
+N * @return	1 if the ring buffer is full, otherwise 0
+N */
+NSTATIC INLINE int RingBuffer_IsFull(RINGBUFF_T *RingBuff)
+Xstatic __inline int RingBuffer_IsFull(RINGBUFF_T *RingBuff)
+N{
+N	return (RingBuffer_GetCount(RingBuff) >= RingBuff->count);
+N}
+N
+N/**
+N * @brief	Return empty status of ring buffer
+N * @param	RingBuff	: Pointer to ring buffer
+N * @return	1 if the ring buffer is empty, otherwise 0
+N */
+NSTATIC INLINE int RingBuffer_IsEmpty(RINGBUFF_T *RingBuff)
+Xstatic __inline int RingBuffer_IsEmpty(RINGBUFF_T *RingBuff)
+N{
+N	return RB_VHEAD(RingBuff) == RB_VTAIL(RingBuff);
+X	return (*(volatile uint32_t *) &(RingBuff)->head) == (*(volatile uint32_t *) &(RingBuff)->tail);
+N}
+N
+N/**
+N * @brief	Insert a single item into ring buffer
+N * @param	RingBuff	: Pointer to ring buffer
+N * @param	data		: pointer to item
+N * @return	1 when successfully inserted,
+N *			0 on error (Buffer not initialized using
+N *			RingBuffer_Init() or attempted to insert
+N *			when buffer is full)
+N */
+Nint RingBuffer_Insert(RINGBUFF_T *RingBuff, const void *data);
+N
+N/**
+N * @brief	Insert an array of items into ring buffer
+N * @param	RingBuff	: Pointer to ring buffer
+N * @param	data		: Pointer to first element of the item array
+N * @param	num			: Number of items in the array
+N * @return	number of items successfully inserted,
+N *			0 on error (Buffer not initialized using
+N *			RingBuffer_Init() or attempted to insert
+N *			when buffer is full)
+N */
+Nint RingBuffer_InsertMult(RINGBUFF_T *RingBuff, const void *data, int num);
+N
+N/**
+N * @brief	Pop an item from the ring buffer
+N * @param	RingBuff	: Pointer to ring buffer
+N * @param	data		: Pointer to memory where popped item be stored
+N * @return	1 when item popped successfuly onto @a data,
+N * 			0 When error (Buffer not initialized using
+N * 			RingBuffer_Init() or attempted to pop item when
+N * 			the buffer is empty)
+N */
+Nint RingBuffer_Pop(RINGBUFF_T *RingBuff, void *data);
+N
+N/**
+N * @brief	Pop an array of items from the ring buffer
+N * @param	RingBuff	: Pointer to ring buffer
+N * @param	data		: Pointer to memory where popped items be stored
+N * @param	num			: Max number of items array @a data can hold
+N * @return	Number of items popped onto @a data,
+N * 			0 on error (Buffer not initialized using RingBuffer_Init()
+N * 			or attempted to pop when the buffer is empty)
+N */
+Nint RingBuffer_PopMult(RINGBUFF_T *RingBuff, void *data, int num);
+N
+N
+N/**
+N * @}
+N */
+N
+N#endif /* __RING_BUFFER_H_ */
+L 34 "lpc_chip_82x\src\ring_buffer.c" 2
+N
+N/*****************************************************************************
+N * Private types/enumerations/variables
+N ****************************************************************************/
+N
+N#define RB_INDH(rb)                ((rb)->head & ((rb)->count - 1))
+N#define RB_INDT(rb)                ((rb)->tail & ((rb)->count - 1))
+N
+N/*****************************************************************************
+N * Public types/enumerations/variables
+N ****************************************************************************/
+N
+N/*****************************************************************************
+N * Private functions
+N ****************************************************************************/
+N
+N/*****************************************************************************
+N * Public functions
+N ****************************************************************************/
+N
+N/* Initialize ring buffer */
+Nint RingBuffer_Init(RINGBUFF_T *RingBuff, void *buffer, int itemSize, int count)
+N{
+N	RingBuff->data = buffer;
+N	RingBuff->count = count;
+N	RingBuff->itemSz = itemSize;
+N	RingBuff->head = RingBuff->tail = 0;
+N
+N	return 1;
+N}
+N
+N/* Insert a single item into Ring Buffer */
+Nint RingBuffer_Insert(RINGBUFF_T *RingBuff, const void *data)
+N{
+N	uint8_t *ptr = RingBuff->data;
+N
+N	/* We cannot insert when queue is full */
+N	if (RingBuffer_IsFull(RingBuff))
+N		return 0;
+N
+N	ptr += RB_INDH(RingBuff) * RingBuff->itemSz;
+X	ptr += ((RingBuff)->head & ((RingBuff)->count - 1)) * RingBuff->itemSz;
+N	memcpy(ptr, data, RingBuff->itemSz);
+N	RingBuff->head++;
+N
+N	return 1;
+N}
+N
+N/* Insert multiple items into Ring Buffer */
+Nint RingBuffer_InsertMult(RINGBUFF_T *RingBuff, const void *data, int num)
+N{
+N	uint8_t *ptr = RingBuff->data;
+N	int cnt1, cnt2;
+N
+N	/* We cannot insert when queue is full */
+N	if (RingBuffer_IsFull(RingBuff))
+N		return 0;
+N
+N	/* Calculate the segment lengths */
+N	cnt1 = cnt2 = RingBuffer_GetFree(RingBuff);
+N	if (RB_INDH(RingBuff) + cnt1 >= RingBuff->count)
+X	if (((RingBuff)->head & ((RingBuff)->count - 1)) + cnt1 >= RingBuff->count)
+N		cnt1 = RingBuff->count - RB_INDH(RingBuff);
+X		cnt1 = RingBuff->count - ((RingBuff)->head & ((RingBuff)->count - 1));
+N	cnt2 -= cnt1;
+N
+N	cnt1 = MIN(cnt1, num);
+X	cnt1 = (((cnt1) < (num)) ? (cnt1) : (num));
+N	num -= cnt1;
+N
+N	cnt2 = MIN(cnt2, num);
+X	cnt2 = (((cnt2) < (num)) ? (cnt2) : (num));
+N	num -= cnt2;
+N
+N	/* Write segment 1 */
+N	ptr += RB_INDH(RingBuff) * RingBuff->itemSz;
+X	ptr += ((RingBuff)->head & ((RingBuff)->count - 1)) * RingBuff->itemSz;
+N	memcpy(ptr, data, cnt1 * RingBuff->itemSz);
+N	RingBuff->head += cnt1;
+N
+N	/* Write segment 2 */
+N	ptr = (uint8_t *) RingBuff->data + RB_INDH(RingBuff) * RingBuff->itemSz;
+X	ptr = (uint8_t *) RingBuff->data + ((RingBuff)->head & ((RingBuff)->count - 1)) * RingBuff->itemSz;
+N	data = (const uint8_t *) data + cnt1 * RingBuff->itemSz;
+N	memcpy(ptr, data, cnt2 * RingBuff->itemSz);
+N	RingBuff->head += cnt2;
+N
+N	return cnt1 + cnt2;
+N}
+N
+N/* Pop single item from Ring Buffer */
+Nint RingBuffer_Pop(RINGBUFF_T *RingBuff, void *data)
+N{
+N	uint8_t *ptr = RingBuff->data;
+N
+N	/* We cannot pop when queue is empty */
+N	if (RingBuffer_IsEmpty(RingBuff))
+N		return 0;
+N
+N	ptr += RB_INDT(RingBuff) * RingBuff->itemSz;
+X	ptr += ((RingBuff)->tail & ((RingBuff)->count - 1)) * RingBuff->itemSz;
+N	memcpy(data, ptr, RingBuff->itemSz);
+N	RingBuff->tail++;
+N
+N	return 1;
+N}
+N
+N/* Pop multiple items from Ring buffer */
+Nint RingBuffer_PopMult(RINGBUFF_T *RingBuff, void *data, int num)
+N{
+N	uint8_t *ptr = RingBuff->data;
+N	int cnt1, cnt2;
+N
+N	/* We cannot insert when queue is empty */
+N	if (RingBuffer_IsEmpty(RingBuff))
+N		return 0;
+N
+N	/* Calculate the segment lengths */
+N	cnt1 = cnt2 = RingBuffer_GetCount(RingBuff);
+N	if (RB_INDT(RingBuff) + cnt1 >= RingBuff->count)
+X	if (((RingBuff)->tail & ((RingBuff)->count - 1)) + cnt1 >= RingBuff->count)
+N		cnt1 = RingBuff->count - RB_INDT(RingBuff);
+X		cnt1 = RingBuff->count - ((RingBuff)->tail & ((RingBuff)->count - 1));
+N	cnt2 -= cnt1;
+N
+N	cnt1 = MIN(cnt1, num);
+X	cnt1 = (((cnt1) < (num)) ? (cnt1) : (num));
+N	num -= cnt1;
+N
+N	cnt2 = MIN(cnt2, num);
+X	cnt2 = (((cnt2) < (num)) ? (cnt2) : (num));
+N	num -= cnt2;
+N
+N	/* Write segment 1 */
+N	ptr += RB_INDT(RingBuff) * RingBuff->itemSz;
+X	ptr += ((RingBuff)->tail & ((RingBuff)->count - 1)) * RingBuff->itemSz;
+N	memcpy(data, ptr, cnt1 * RingBuff->itemSz);
+N	RingBuff->tail += cnt1;
+N
+N	/* Write segment 2 */
+N	ptr = (uint8_t *) RingBuff->data + RB_INDT(RingBuff) * RingBuff->itemSz;
+X	ptr = (uint8_t *) RingBuff->data + ((RingBuff)->tail & ((RingBuff)->count - 1)) * RingBuff->itemSz;
+N	data = (uint8_t *) data + cnt1 * RingBuff->itemSz;
+N	memcpy(data, ptr, cnt2 * RingBuff->itemSz);
+N	RingBuff->tail += cnt2;
+N
+N	return cnt1 + cnt2;
+N}
